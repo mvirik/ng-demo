@@ -6,57 +6,7 @@ import { StockWebSocketService } from '../stock-websocket.service';
   selector: 'app-stock-details-table',
   standalone: true,
   imports: [DecimalPipe, CurrencyPipe],
-  template: `
-    @let d = stockWs.details();
-    <div class="flex flex-col gap-2">
-      <div class="flex items-baseline gap-3">
-        <span class="text-2xl font-bold text-white">{{ d.symbol }}</span>
-        <span class="text-sm text-slate-400">{{ d.name }}</span>
-      </div>
-
-      <div class="flex items-baseline gap-2">
-        <span class="text-3xl font-semibold text-white">
-          {{ d.currentPrice | currency : d.currency }}
-        </span>
-        <span
-          class="text-sm font-medium"
-          [class.text-emerald-400]="d.priceChange >= 0"
-          [class.text-red-400]="d.priceChange < 0"
-        >
-          {{ d.priceChange >= 0 ? '+' : '' }}{{ d.priceChange | number : '1.2-2' }}
-          ({{ d.priceChangePercent >= 0 ? '+' : ''
-          }}{{ d.priceChangePercent | number : '1.2-2' }}%)
-        </span>
-      </div>
-
-      <div class="mt-4 overflow-hidden rounded-lg border border-slate-700">
-        <table class="w-full text-sm">
-          <tbody>
-            @for (row of rows(d); track row.label) {
-              <tr class="border-b border-slate-700 last:border-0">
-                <td class="px-4 py-2.5 text-slate-400 font-medium w-1/2">
-                  {{ row.label }}
-                </td>
-                <td class="px-4 py-2.5 text-white text-right">
-                  {{ row.value }}
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-
-      <div class="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
-        <span
-          class="inline-block w-2 h-2 rounded-full"
-          [class.bg-emerald-400]="stockWs.connected()"
-          [class.bg-slate-500]="!stockWs.connected()"
-        ></span>
-        {{ stockWs.connected() ? 'Live' : 'Disconnected' }} ·
-        {{ d.exchange }}
-      </div>
-    </div>
-  `,
+  templateUrl: './stock-details-table.component.html',
 })
 export class StockDetailsTableComponent {
   readonly stockWs = inject(StockWebSocketService);
