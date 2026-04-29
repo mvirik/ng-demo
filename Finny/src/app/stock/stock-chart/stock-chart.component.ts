@@ -13,11 +13,7 @@ import { StockWebSocketService } from '../stock-websocket.service';
 @Component({
   selector: 'app-stock-chart',
   standalone: true,
-  template: `
-    <div class="relative w-full h-full">
-      <canvas #chartCanvas class="w-full h-full"></canvas>
-    </div>
-  `,
+  templateUrl: './stock-chart.component.html',
 })
 export class StockChartComponent implements OnInit, OnDestroy {
   @ViewChild('chartCanvas', { static: true })
