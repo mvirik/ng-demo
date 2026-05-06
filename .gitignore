@@ -1,1 +1,143 @@
+# ============================================================
+# .NET
+# ============================================================
+
+## Build output
+bin/
+obj/
+out/
+
+## Publish output
+publish/
+*.publish.xml
+
+## NuGet
+*.nupkg
+*.snupkg
+*.nuspec
+project.lock.json
+project.fragment.lock.json
+artifacts/
+packages/
+.nuget/
+
+## User-specific files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.rsuser
+
+## Visual Studio / Rider
+.vs/
+.idea/
+*.swp
+*.*~
+
+## Rider
+.idea/
+
+## Mono Auto Generated Files
+mono_crash.*
+
+## Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+## Coverage
+coverage*/
+*.coverage
+*.coveragexml
+lcov.info
+opencover.xml
+
+## Logs
+*.log
+*.tlog
+
+## MSBuild crash logs
+MSBuild_*.failure.log
+
+## NuGet v3 cache
+.nuget/
+*.lock.json
+!**/packages.lock.json
+
+## Secrets & config overrides (NEVER commit these)
+appsettings.Development.json
+appsettings.*.local.json
+secrets.json
+*.pfx
+*.p12
+*.key
+*.pem
+
+## dotnet user-secrets (stored in %APPDATA%, not project, but just in case)
+secrets/
+
+## Entity Framework migrations snapshot (optional — keep if using EF)
+# **/Migrations/
+
+## ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+## ============================================================
+# Angular / Node
+# ============================================================
+
+## Compiled output
+Finny/dist/
+Finny/tmp/
+Finny/out-tsc/
+Finny/bazel-out/
+
+## Node modules
 node_modules/
+
+## npm / yarn logs
+npm-debug.log*
+yarn-error.log
+yarn-debug.log*
+.pnpm-debug.log*
+
+## Angular cache
+.angular/cache/
+
+## Test coverage
+Finny/coverage/
+
+## Environment files (keep .example, ignore real ones)
+.env
+.env.*
+!.env.example
+
+## ============================================================
+# OS / Editor
+# ============================================================
+
+## macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+## Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+## VS Code — allow shared settings, ignore personal/generated
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/mcp.json
+.history/
+
+## JetBrains
+.idea/
+*.iml
