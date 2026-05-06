@@ -109,10 +109,9 @@ describe('StockDashboardComponent', () => {
     expect(el.querySelector('app-stock-details-table')).toBeTruthy();
   });
 
-  it('should connect with a different symbol when input changes', () => {
-    fixture.componentRef.setInput('symbol', 'MSFT');
-    fixture.detectChanges();
-    // ngOnInit is only called once; symbol input is set before detectChanges
+  it('should connect with the initial symbol value from the route', () => {
+    // ngOnInit calls connect() once with the initial symbol value; subsequent
+    // input changes are handled via router navigation (new component instance).
     expect(mockService.connectCalledWith).toBe('AAPL');
   });
 });
