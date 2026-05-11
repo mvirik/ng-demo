@@ -27,17 +27,20 @@ class MockStockWebSocketService {
   private _connected = signal(false);
   private _priceHistory = signal([{ timestamp: Date.now(), price: 182.5 }]);
   private _details = signal(mockDetails);
+  private _symbol = signal('');
 
   readonly connected = this._connected.asReadonly();
   readonly priceHistory = this._priceHistory.asReadonly();
   readonly details = this._details.asReadonly();
+  readonly symbol = this._symbol.asReadonly();
   readonly latestPrice = signal(182.5).asReadonly();
 
-  connectCalled = false;
+  connectCalledWith: string | null = null;
   disconnectCalled = false;
 
-  connect(): void {
-    this.connectCalled = true;
+  connect(symbol: string): void {
+    this.connectCalledWith = symbol;
+    this._symbol.set(symbol);
     this._connected.set(true);
   }
 
@@ -68,6 +71,7 @@ describe('StockDashboardComponent', () => {
       .compileComponents();
 
     fixture = TestBed.createComponent(StockDashboardComponent);
+    fixture.componentRef.setInput('symbol', 'AAPL');
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -76,8 +80,8 @@ describe('StockDashboardComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should call connect() on init', () => {
-    expect(mockService.connectCalled).toBe(true);
+  it('should call connect() with the symbol from the route on init', () => {
+    expect(mockService.connectCalledWith).toBe('AAPL');
   });
 
   it('should call disconnect() on destroy', () => {
@@ -90,6 +94,11 @@ describe('StockDashboardComponent', () => {
     expect(el.textContent).toContain('Stock Dashboard');
   });
 
+  it('should render the symbol in the subtitle', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.textContent).toContain('AAPL');
+  });
+
   it('should render the chart panel', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('app-stock-chart')).toBeTruthy();
@@ -98,5 +107,11 @@ describe('StockDashboardComponent', () => {
   it('should render the details panel', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('app-stock-details-table')).toBeTruthy();
+  });
+
+  it('should connect with the initial symbol value from the route', () => {
+    // ngOnInit calls connect() once with the initial symbol value; subsequent
+    // input changes are handled via router navigation (new component instance).
+    expect(mockService.connectCalledWith).toBe('AAPL');
   });
 });

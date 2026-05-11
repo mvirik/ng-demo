@@ -29,6 +29,11 @@ yarn-error.log
 !.vscode/mcp.json
 .history/*
 
+# Environment variable files (use .env.example as a template)
+.env
+.env.local
+.env.*.local
+
 # Miscellaneous
 /.angular/cache
 .sass-cache/

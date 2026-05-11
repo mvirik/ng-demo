@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   OnDestroy,
@@ -14,6 +15,7 @@ import { StockWebSocketService } from '../stock-websocket.service';
   selector: 'app-stock-chart',
   standalone: true,
   templateUrl: './stock-chart.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StockChartComponent implements OnInit, OnDestroy {
   @ViewChild('chartCanvas', { static: true })
@@ -33,7 +35,9 @@ export class StockChartComponent implements OnInit, OnDestroy {
       const prices = history.map((p) => p.price);
 
       this.chart.data.labels = labels;
-      (this.chart.data.datasets[0] as { data: number[] }).data = prices;
+      (this.chart.data.datasets[0] as { data: number[]; label: string }).data = prices;
+      (this.chart.data.datasets[0] as { data: number[]; label: string }).label =
+        this.stockWs.symbol();
       this.chart.update('none');
     });
   }
@@ -49,6 +53,7 @@ export class StockChartComponent implements OnInit, OnDestroy {
 
   private initChart(): void {
     const history = this.stockWs.priceHistory();
+    const symbol = this.stockWs.symbol();
     const labels = history.map((p) =>
       new Date(p.timestamp).toLocaleTimeString(),
     );
@@ -60,7 +65,7 @@ export class StockChartComponent implements OnInit, OnDestroy {
         labels,
         datasets: [
           {
-            label: 'AAPL',
+            label: symbol,
             data: prices,
             borderColor: '#3b82f6',
             backgroundColor: 'rgba(59,130,246,0.12)',

@@ -1,100 +1,137 @@
-import { Injectable, OnDestroy, signal, computed } from '@angular/core';
+import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
 import { StockDetails, StockPrice } from './stock.model';
+import { PriceUpdate, WS_FACTORY, WS_URL } from './stock-websocket.config';
 
-const INITIAL_PRICE = 182.63;
-const SYMBOL = 'AAPL';
 const MAX_HISTORY = 60;
 
-function buildInitialHistory(): { history: StockPrice[]; openPrice: number } {
-  const history: StockPrice[] = [];
-  let price = INITIAL_PRICE;
-  const now = Date.now();
-
-  for (let i = MAX_HISTORY - 1; i >= 0; i--) {
-    price = Math.max(1, price + (Math.random() - 0.49) * 1.5);
-    history.push({ timestamp: now - i * 1500, price });
-  }
-  return { history, openPrice: history[0]?.price ?? INITIAL_PRICE };
-}
-
 function buildDetails(
+  symbol: string,
   currentPrice: number,
   openPrice: number,
+  highPrice: number,
+  lowPrice: number,
 ): StockDetails {
-  const high = Math.max(
-    currentPrice,
-    openPrice,
-    currentPrice * (1 + Math.random() * 0.01),
-  );
-  const low = Math.min(
-    currentPrice,
-    openPrice,
-    currentPrice * (1 - Math.random() * 0.01),
-  );
   const priceChange = currentPrice - openPrice;
   return {
-    symbol: SYMBOL,
-    name: 'Apple Inc.',
-    exchange: 'NASDAQ',
+    symbol,
+    name: symbol,
+    exchange: 'LIVE',
     currency: 'USD',
     currentPrice,
     openPrice,
-    highPrice: high,
-    lowPrice: low,
-    volume: Math.floor(52_000_000 + Math.random() * 5_000_000),
-    marketCap: Math.floor(currentPrice * 15_441_000_000),
+    highPrice,
+    lowPrice,
+    volume: 0,
+    marketCap: 0,
     priceChange,
-    priceChangePercent: (priceChange / openPrice) * 100,
+    priceChangePercent: openPrice > 0 ? (priceChange / openPrice) * 100 : 0,
   };
 }
 
 @Injectable({ providedIn: 'root' })
 export class StockWebSocketService implements OnDestroy {
+  private readonly wsUrl = inject(WS_URL);
+  private readonly wsFactory = inject(WS_FACTORY);
+
+  private readonly _symbol = signal<string>('');
   private readonly _priceHistory = signal<StockPrice[]>([]);
-  private readonly _details = signal<StockDetails>(
-    buildDetails(INITIAL_PRICE, INITIAL_PRICE),
-  );
+  private readonly _details = signal<StockDetails>({
+    symbol: '',
+    name: '',
+    exchange: '',
+    currency: 'USD',
+    currentPrice: 0,
+    openPrice: 0,
+    highPrice: 0,
+    lowPrice: 0,
+    volume: 0,
+    marketCap: 0,
+    priceChange: 0,
+    priceChangePercent: 0,
+  });
   private readonly _connected = signal(false);
 
+  readonly symbol = this._symbol.asReadonly();
   readonly priceHistory = this._priceHistory.asReadonly();
   readonly details = this._details.asReadonly();
   readonly connected = this._connected.asReadonly();
 
-  readonly latestPrice = computed(
-    () => this._priceHistory().at(-1)?.price ?? INITIAL_PRICE,
-  );
+  readonly latestPrice = computed(() => this._priceHistory().at(-1)?.price ?? 0);
 
-  private mockWs: ReturnType<typeof setInterval> | null = null;
-  private openPrice = INITIAL_PRICE;
+  private ws: WebSocket | null = null;
+  private wsOpen = false;
+  private openPrice = 0;
+  private sessionHigh = 0;
+  private sessionLow = Number.MAX_VALUE;
 
-  constructor() {
-    const { history, openPrice } = buildInitialHistory();
-    this._priceHistory.set(history);
-    this.openPrice = openPrice;
-    this._details.set(buildDetails(history.at(-1)?.price ?? INITIAL_PRICE, openPrice));
-  }
+  connect(symbol: string): void {
+    const upperSymbol = symbol.toUpperCase();
+    if (this._connected() && this._symbol() === upperSymbol) return;
 
-  connect(): void {
-    if (this._connected()) return;
-    this._connected.set(true);
+    this.disconnect();
 
-    this.mockWs = setInterval(() => {
-      const history = this._priceHistory();
-      const lastPrice = history.at(-1)?.price ?? INITIAL_PRICE;
-      const change = (Math.random() - 0.49) * 1.5;
-      const newPrice = Math.max(1, lastPrice + change);
-      const tick: StockPrice = { timestamp: Date.now(), price: newPrice };
+    this._symbol.set(upperSymbol);
+    this._priceHistory.set([]);
+    this._details.set(buildDetails(upperSymbol, 0, 0, 0, 0));
+    this.openPrice = 0;
+    this.sessionHigh = 0;
+    this.sessionLow = Number.MAX_VALUE;
 
-      const updated = [...history, tick].slice(-MAX_HISTORY);
-      this._priceHistory.set(updated);
-      this._details.set(buildDetails(newPrice, this.openPrice));
-    }, 1500);
+    const ws = this.wsFactory(this.wsUrl);
+    this.ws = ws;
+
+    ws.onopen = () => {
+      this.wsOpen = true;
+      this._connected.set(true);
+      ws.send(JSON.stringify({ type: 'subscribe', symbol: upperSymbol }));
+    };
+
+    ws.onmessage = (event: MessageEvent<string>) => {
+      try {
+        const update = JSON.parse(event.data) as PriceUpdate;
+        if (update.symbol?.toUpperCase() !== upperSymbol) return;
+
+        const price = update.price;
+        if (this.openPrice === 0) {
+          this.openPrice = price;
+          this.sessionHigh = price;
+          this.sessionLow = price;
+        } else {
+          this.sessionHigh = Math.max(this.sessionHigh, price);
+          this.sessionLow = Math.min(this.sessionLow, price);
+        }
+
+        const tick: StockPrice = { timestamp: update.timestamp, price };
+        const history = [...this._priceHistory(), tick].slice(-MAX_HISTORY);
+        this._priceHistory.set(history);
+        this._details.set(
+          buildDetails(upperSymbol, price, this.openPrice, this.sessionHigh, this.sessionLow),
+        );
+      } catch {
+        // ignore malformed messages
+      }
+    };
+
+    ws.onerror = () => {
+      this._connected.set(false);
+    };
+
+    ws.onclose = () => {
+      this.wsOpen = false;
+      this._connected.set(false);
+      this.ws = null;
+    };
   }
 
   disconnect(): void {
-    if (this.mockWs !== null) {
-      clearInterval(this.mockWs);
-      this.mockWs = null;
+    if (this.ws) {
+      const symbol = this._symbol();
+      if (this.wsOpen) {
+        this.ws.send(JSON.stringify({ type: 'unsubscribe', symbol }));
+      }
+      this.ws.close();
+      this.ws = null;
+      this.wsOpen = false;
     }
     this._connected.set(false);
   }
