@@ -1,25 +1,8 @@
-import { computed, inject, Injectable, InjectionToken, OnDestroy, signal } from '@angular/core';
+import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
 import { StockDetails, StockPrice } from './stock.model';
-
-export type WebSocketFactory = (url: string) => WebSocket;
-
-export const WS_URL = new InjectionToken<string>('WS_URL', {
-  providedIn: 'root',
-  factory: () => 'ws://localhost:5230/ws/stocks',
-});
-
-export const WS_FACTORY = new InjectionToken<WebSocketFactory>('WS_FACTORY', {
-  providedIn: 'root',
-  factory: () => (url: string) => new WebSocket(url),
-});
+import { PriceUpdate, WS_FACTORY, WS_URL } from './stock-websocket.config';
 
 const MAX_HISTORY = 60;
-
-interface PriceUpdate {
-  symbol: string;
-  price: number;
-  timestamp: number;
-}
 
 function buildDetails(
   symbol: string,

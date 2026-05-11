@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { StockWebSocketService, WS_FACTORY, WS_URL } from './stock-websocket.service';
+import { StockWebSocketService } from './stock-websocket.service';
+import { WS_FACTORY, WS_URL } from './stock-websocket.config';
 
 class FakeWebSocket {
   readyState = 0; // CONNECTING
